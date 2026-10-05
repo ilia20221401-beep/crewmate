@@ -1,0 +1,106 @@
+# Publishes the game to GitHub Pages on every push to main, and lets you run a
+# deploy by hand from the Actions tab.
+#
+# Nothing needs building: dist/game.html is a complete, self-contained file.
+# This workflow re-runs the checks first, and only publishes if they pass, so a
+# broken commit can never go live.
+#
+# If you would rather just upload files by hand, you can ignore or delete this
+# file — it is not required for the game to work.
+
+name: Test and deploy to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# never run two deploys at once; queue instead of cancelling so a good build
+# is not thrown away by a follow-up commit
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Run the checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Rebuild the single file from source
+        run: node build.js --pages
+
+      - name: Map geometry, collision consistency and reachability
+        run: node validate-map.js
+
+      - name: Game logic
+        run: node test-game.js
+
+      - name: UI and renderer against a fake DOM
+        run: node test-runtime.js
+
+      - name: Built bundle structure
+        run: node test-html.js
+
+      - name: Touch-control layout
+        run: node test-mobile.js
+
+      - name: Deployment safety
+        run: node test-deploy.js
+
+      - name: Host and client over the wire
+        run: node test-loopback.js
+
+      - name: Hostile packets from a bad peer
+        run: node test-fuzz.js
+
+      - name: Randomised full matches
+        run: node test-stress.js 20
+
+      - name: Fail if the committed build is out of date
+        run: |
+          if ! git diff --quiet -- index.html dist/game.html; then
+            echo "::error::index.html or dist/game.html changed when rebuilt."
+            echo "Run 'node build.js --pages' and commit the result."
+            git --no-pager diff --stat -- index.html dist/game.html
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          # The game IS the artifact. Sources, tests and tooling stay in the
+          # repository but are not published.
+          cp index.html _site/index.html
+          cp dist/game.html _site/game.html
+          cp README.md _site/README.md
+          touch _site/.nojekyll
+          ls -la _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          # only the assembled game, so the short URL serves index.html
+          path: _site
+
+  deploy:
+    name: Deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

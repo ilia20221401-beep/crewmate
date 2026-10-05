@@ -1,0 +1,31 @@
+{
+  "name": "crewmate",
+  "version": "1.0.0",
+  "description": "An Among Us style social deduction game for the browser. Host on a PC, join from phones with a 4-digit room code over WebRTC.",
+  "private": true,
+  "license": "MIT",
+  "keywords": ["game", "multiplayer", "webrtc", "among-us", "canvas", "browser-game"],
+  "scripts": {
+    "build": "node build.js",
+    "build:pages": "node build.js --pages",
+    "build:dev": "node build.js --pages --dev",
+    "vendor": "node build-vendor.js",
+    "serve": "node serve.js",
+    "pack": "node pack.js",
+    "probe": "node probe-net.js",
+    "test": "node validate-map.js && node test-game.js && node test-runtime.js && node test-html.js && node test-mobile.js && node test-deploy.js && node test-loopback.js && node test-fuzz.js && node test-stress.js 20",
+    "test:map": "node validate-map.js",
+    "test:game": "node test-game.js",
+    "test:runtime": "node test-runtime.js",
+    "test:html": "node test-html.js",
+    "test:mobile": "node test-mobile.js",
+    "test:deploy": "node test-deploy.js",
+    "test:loopback": "node test-loopback.js",
+    "test:fuzz": "node test-fuzz.js",
+    "test:stress": "node test-stress.js 50",
+    "test:net": "node probe-net.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
