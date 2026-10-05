@@ -1,1 +1,221 @@
+</style>
+</head>
+<body>
 
+<!-- ============================ MENU ============================ -->
+<div id="screen-menu" class="screen">
+  <div class="card">
+    <div class="logo">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="13" r="7" fill="#e8453c"/>
+        <rect x="9" y="16" width="14" height="11" rx="4" fill="#e8453c"/>
+        <rect x="12" y="9" width="8" height="5" rx="2" fill="#a9d6ff"/>
+      </svg>
+      <span class="logo-text">CREWMATE</span>
+    </div>
+    <p class="tagline" data-i18n="tagline">A social deduction game — find the impostor among your crew.</p>
+
+    <div class="field">
+      <label for="in-name" data-i18n="yourName">Your name</label>
+      <input id="in-name" type="text" maxlength="12" placeholder="Player" autocomplete="off" spellcheck="false" />
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-create" class="btn primary">
+        <span>🖥️</span><span data-i18n="hostGame">Host a game</span>
+      </button>
+      <button id="btn-join" class="btn">
+        <span>📱</span><span data-i18n="joinGame">Join a game</span>
+      </button>
+    </div>
+
+    <div id="join-panel" class="hidden" style="margin-top:16px">
+      <div class="field" style="margin-bottom:8px">
+        <label for="in-code" data-i18n="roomCode">Room code</label>
+        <input id="in-code" class="code-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" autocomplete="off" />
+      </div>
+      <button id="btn-join-go" class="btn primary" data-i18n="connect">Connect</button>
+    </div>
+
+    <div id="menu-status" class="status"></div>
+
+    <details class="howto">
+      <summary data-i18n="howToPlay">How to play</summary>
+      <ul>
+        <li data-i18n="how1">One player hosts on a computer and shares the 4-digit room code.</li>
+        <li data-i18n="how2">Everyone else opens this same page on their phone, taps <b>Join a game</b> and enters the code.</li>
+        <li data-i18n="how3">Crewmates must finish all tasks or vote out the impostors. Impostors kill the crew.</li>
+        <li data-i18n="how4">Phones get automatic touch controls: drag on the left to move, tap the buttons on the right to act.</li>
+        <li data-i18n="how5">Desktop: <kbd>WASD</kbd> / arrows to move, <kbd>E</kbd> to use, <kbd>Q</kbd> to kill, <kbd>R</kbd> to report, <kbd>M</kbd> for map.</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<!-- ============================ LOBBY ============================ -->
+<div id="screen-lobby" class="screen hidden">
+  <div class="card">
+    <h2 id="lobby-title" data-i18n="lobby">Lobby</h2>
+    <p id="lobby-sub"></p>
+
+    <div id="room-code-wrap" class="hidden">
+      <div class="hud-title" style="text-align:center" data-i18n="shareCode">Share this code</div>
+      <div id="room-code" class="room-code">0000</div>
+      <div class="link-box">
+        <span id="join-url"></span>
+        <button id="btn-copy" class="btn sm" data-i18n="copy">Copy</button>
+      </div>
+    </div>
+
+    <div class="hud-title" style="margin-top:16px" data-i18n="players">Players</div>
+    <div id="lobby-players" class="players"></div>
+
+    <div id="lobby-settings" class="hidden">
+      <div class="field">
+        <label for="sel-impostors" data-i18n="impostors">Impostors</label>
+        <select id="sel-impostors">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="sel-speed" data-i18n="speed">Player speed</label>
+        <select id="sel-speed">
+          <option value="0.85">Slow</option>
+          <option value="1" selected>Normal</option>
+          <option value="1.2">Fast</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="lobby-status" class="status"></div>
+    <div class="btn-row">
+      <button id="btn-leave" class="btn ghost" data-i18n="leave">Leave</button>
+      <button id="btn-start" class="btn primary hidden" data-i18n="startGame">Start game</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ GAME ============================ -->
+<div id="screen-game" class="screen hidden">
+  <div id="game-wrap">
+    <canvas id="game-canvas"></canvas>
+
+    <div id="hud">
+      <div class="hud-top-left">
+        <div class="panel" id="panel-tasks">
+          <div class="hud-title" data-i18n="tasks">Tasks</div>
+          <ul id="task-list" class="task-list"></ul>
+          <div class="bar"><i id="task-bar"></i></div>
+        </div>
+        <div class="panel hidden" id="panel-role">
+          <div class="hud-title" data-i18n="role">Role</div>
+          <div id="role-text"></div>
+        </div>
+      </div>
+
+      <div class="hud-top-right">
+        <button id="btn-map" class="icon-btn" title="Map (M)">🗺️</button>
+        <button id="btn-sound" class="icon-btn" title="Sound">🔊</button>
+        <button id="btn-fullscreen" class="icon-btn" title="Fullscreen">⛶</button>
+      </div>
+
+      <div class="hud-actions">
+        <button id="act-report" class="act-btn report" hidden><span class="ico">🚨</span><span data-i18n="report">Report</span></button>
+        <button id="act-kill" class="act-btn kill" hidden><span class="ico">🔪</span><span data-i18n="kill">Kill</span><div class="kill-cooldown hidden" id="kill-cd"></div></button>
+        <button id="act-sabotage" class="act-btn sabotage" hidden><span class="ico">💡</span><span data-i18n="lights">Lights</span><div class="kill-cooldown hidden" id="sab-cd"></div></button>
+        <button id="act-use" class="act-btn use" hidden><span class="ico">⚙️</span><span data-i18n="use">Use</span></button>
+      </div>
+
+      <button id="btn-emergency" class="meeting-btn"><span class="ico">📢</span><span data-i18n="meeting">Meeting</span><small id="emergency-count"></small></button>
+
+      <div id="joystick"><div class="nub" id="joy-nub"></div></div>
+      <div id="net-badge"></div>
+    </div>
+
+    <div id="rotate-hint">
+      <div class="ph">📱</div>
+      <div><b data-i18n="rotateTitle">Rotate your phone</b></div>
+      <div style="color:var(--txt-dim);font-size:14px" data-i18n="rotateBody">This game is best played in landscape.</div>
+    </div>
+
+    <!-- overlays -->
+    <div id="ov-role" class="overlay hidden">
+      <div class="card role-reveal">
+        <div class="hud-title" data-i18n="youAre">You are</div>
+        <div id="role-name" class="role-name crew">CREWMATE</div>
+        <div id="role-desc" class="role-desc"></div>
+        <div class="bar" style="margin-top:18px"><i id="role-countdown" style="width:100%;transition:width 3.5s linear"></i></div>
+      </div>
+    </div>
+
+    <div id="ov-meeting" class="overlay hidden">
+      <div class="card">
+        <div class="overlay-title" id="meeting-title" data-i18n="emergencyMeeting">Emergency Meeting</div>
+        <div class="overlay-sub" id="meeting-sub"></div>
+        <div class="vote-timer" id="vote-timer">30</div>
+        <div class="meeting-grid" id="vote-grid"></div>
+        <div class="btn-row">
+          <button id="btn-skip" class="btn ghost" data-i18n="skipVote">Skip vote</button>
+        </div>
+        <div style="margin-top:14px">
+          <div class="hud-title" data-i18n="discussion">Discussion</div>
+          <div class="chat-log" id="chat-log"></div>
+          <div class="chat-input">
+            <input id="chat-input" type="text" maxlength="120" placeholder="Say something…" autocomplete="off" />
+            <button id="btn-chat-send" class="btn sm primary">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ov-result" class="overlay hidden">
+      <div class="card">
+        <div class="result-banner">
+          <div class="rb-title" id="result-title">—</div>
+          <div class="rb-sub" id="result-sub"></div>
+        </div>
+        <div id="result-body"></div>
+        <div class="btn-row">
+          <button id="btn-rematch" class="btn primary hidden" data-i18n="playAgain">Play again</button>
+          <button id="btn-exit" class="btn ghost" data-i18n="exitToMenu">Exit to menu</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="lights-banner" class="hidden">
+      <span class="lb-icon">🔌</span>
+      <span id="lights-text">Lights sabotaged!</span>
+      <span id="lights-timer" class="lb-timer">22</span>
+      <button id="btn-fix-lights" class="btn sm primary hidden">Fix lights</button>
+    </div>
+
+    <div id="ov-map" class="overlay hidden">
+      <div class="card">
+        <div class="overlay-title" data-i18n="map">Map</div>
+        <div class="overlay-sub" data-i18n="mapSub">Your tasks are marked. Click the map to set a waypoint.</div>
+        <canvas id="map-canvas" class="map-canvas" width="1200" height="720"></canvas>
+        <div class="btn-row"><button id="btn-close-map" class="btn primary" data-i18n="close">Close</button></div>
+      </div>
+    </div>
+
+    <div id="ov-task" class="overlay hidden">
+      <div class="card">
+        <div class="overlay-title" id="task-title">Task</div>
+        <div class="overlay-sub" id="task-sub"></div>
+        <div id="task-body"></div>
+        <div class="btn-row">
+          <button id="btn-task-cancel" class="btn ghost" data-i18n="cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<!-- ============================ SCRIPTS ============================ -->
+<!-- PeerJS is bundled in src/vendor.js. If it is ever missing, main.js
+     falls back to loading it from a CDN so the game still works. -->
+<script>
